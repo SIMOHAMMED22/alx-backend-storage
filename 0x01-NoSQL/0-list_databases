@@ -1,2 +1,4 @@
 // script that lists all databases in MongoDB
+
+use admin
 show databases
