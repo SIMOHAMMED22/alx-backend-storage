@@ -5,12 +5,3 @@ if (typeof schoolName === 'undefined') {
     print("Error: Please provide the schoolName.");
     quit(1);
 }
-
-// Connect to the specified database
-var db = db.getSiblingDB(database_name);
-
-// Insert the document into the school collection
-db.school.insertOne({name: schoolName});
-
-// Print a success message
-print("Document inserted successfully.");
