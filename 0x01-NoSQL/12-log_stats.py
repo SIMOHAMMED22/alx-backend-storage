@@ -12,10 +12,13 @@ def log_stats(mongo_collection):
     print("Methods:")
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
     for method in methods:
-        print("\tmethod {}: {}".format(method, mongo_collection.count_documents({"method": method})))
+        print("\tmethod {}: {}".format
+              (method, mongo_collection.count_documents({"method": method})))
 
     # Number of documents with method GET and path /status
-    print("{} status check".format(mongo_collection.count_documents({"method": "GET", "path": "/status"})))
+    print("{} status check".format
+          (mongo_collection.count_documents(
+              {"method": "GET", "path": "/status"})))
 
 
 if __name__ == "__main__":
