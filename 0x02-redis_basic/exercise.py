@@ -1,81 +1,92 @@
 #!/usr/bin/env python3
-"""exercise.py"""
-
-import redis
-import uuid
-from typing import Union, Callable
+"""this is module for redis"""
 from functools import wraps
+import redis
+from typing import Union, Callable, Optional, List
+import uuid
 
 
 def count_calls(method: Callable) -> Callable:
-    """count calls"""
+    """count calls method for redis"""
+
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """wrapper"""
-        self._redis.incr(method.__qualname__)
+        """wrapper method for redis"""
+        key = method.__qualname__
+        self._redis.incr(key)
         return method(self, *args, **kwargs)
-
     return wrapper
 
 
 def call_history(method: Callable) -> Callable:
-    """call history"""
-    inputs = method.__qualname__ + ':inputs'
-    outputs = method.__qualname__ + ':inputs'
+    """call history method for redis"""
+    key = method.__qualname__
+    inputs = key + ":inputs"
+    outputs = key + ":outputs"
 
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        """wrapper"""
+        """wrapper method for redis"""
         self._redis.rpush(inputs, str(args))
-        data = method(self, *args, **kwargs)
-        self._redis.rpush(outputs, str(data))
-        return data
-
+        result = method(self, *args, **kwargs)
+        self._redis.rpush(outputs, str(result))
+        return result
     return wrapper
 
 
-def replay(method: Callable) -> None:
-    """replay"""
-    inputs = f'{method.__qualname__}:inputs'
-    outputs = f'{method.__qualname__}:outputs'
+def replay(redis_instance: redis.Redis, method: Callable) -> List[str]:
+    """replay method for redis"""
+    method_name = method.__qualname__
 
-    in_el = method.__self__._redis.lrange(inputs, 0, -1)
-    out_el = method.__self__._redis.lrange(outputs, 0, -1)
+    input_key = method_name + ":inputs"
+    output_key = method_name + ":outputs"
 
-    print("{} was called {} times:".format(method.__qualname__, len(in_el)))
-    for i, o in zip(in_el, out_el):
-        print(
-            f"{method.__qualname__}\
-                (*{i.decode('utf-8')}) \
-                    -> {o.decode('utf-8')}"
-            )
+    input_history = redis_instance.lrange(input_key, 0, -1)
+    output_history = redis_instance.lrange(output_key, 0, -1)
+
+    print(f"{method_name} was called {len(input_history)} times:")
+    for input_data, output_data in zip(input_history, output_history):
+        print(f"{method_name}(*{input_data.decode('utf-8')}) -> "
+              f"{output_data.decode('utf-8')}")
 
 
 class Cache:
-    """cache class"""
-    def __init__(self) -> None:
-        """init"""
+    """main class for redis"""
+    def __init__(self):
+        """init method for redis"""
         self._redis = redis.Redis()
         self._redis.flushdb()
 
-    @count_calls
     @call_history
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
-        """store"""
+        """sotre method for redis"""
         key = str(uuid.uuid4())
-        self._redis.set(key, data)
+        if isinstance(data, str):
+            self._redis.set(key, data)
+        elif isinstance(data, bytes):
+            self._redis.set(key, data)
+        elif isinstance(data, int):
+            self._redis.set(key, str(data))
+        elif isinstance(data, float):
+            self._redis.set(key, str(data))
         return key
 
-    def get(self, key, fn=None) -> Union[str, bytes, int, float]:
-        """get"""
-        if fn is None:
-            return self._redis.get(key)
-        return fn(self._redis.get(key))
+    def get(self, key: str, fn: Callable = None) -> \
+            Union[str, bytes, int, float]:
+        """get method for redis"""
+        value = self._redis.get(key)
+        if value is None:
+            return None
+        if fn is not None:
+            return fn(value)
+        else:
+            return value
 
-    def get_str(self, key) -> str:
-        """get_str"""
-        return self.get(key, str)
+    def get_str(self, key: str) -> str:
+        """get str method for redis"""
+        return self.get(key, lambda d: d.decode("utf-8"))
 
-    def get_int(self, key) -> int:
-        """get_int"""
+    def get_int(self, key: str) -> int:
+        """get int method for redis"""
         return self.get(key, int)
