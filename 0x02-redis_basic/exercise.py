@@ -34,7 +34,7 @@ def call_history(method: Callable) -> Callable:
     return wrapper
 
 
-def replay(redis_instance: redis.Redis, method: Callable) -> List[str]:
+def replay(redis_instance: redis.Redis, method: Callable) -> None:
     """replay method for redis"""
     method_name = method.__qualname__
 
@@ -44,10 +44,14 @@ def replay(redis_instance: redis.Redis, method: Callable) -> List[str]:
     input_history = redis_instance.lrange(input_key, 0, -1)
     output_history = redis_instance.lrange(output_key, 0, -1)
 
+    if not input_history or not output_history:
+        print(f"No history found for method: {method_name}")
+        return
+
     print(f"{method_name} was called {len(input_history)} times:")
     for input_data, output_data in zip(input_history, output_history):
-        input_str = ', '.join(eval(input_data.decode('utf-8')))
-        print(f"{method_name}({input_str}) -> {output_data.decode('utf-8')}")
+        print(f"{method_name}(*{input_data.decode('utf-8')}) -> "
+              f"{output_data.decode('utf-8')}")
 
 
 class Cache:
