@@ -46,8 +46,8 @@ def replay(redis_instance: redis.Redis, method: Callable) -> List[str]:
 
     print(f"{method_name} was called {len(input_history)} times:")
     for input_data, output_data in zip(input_history, output_history):
-        print(f"{method_name}(*{input_data.decode('utf-8')}) -> "
-              f"{output_data.decode('utf-8')}")
+        input_str = ', '.join(eval(input_data.decode('utf-8')))
+        print(f"{method_name}({input_str}) -> {output_data.decode('utf-8')}")
 
 
 class Cache:
