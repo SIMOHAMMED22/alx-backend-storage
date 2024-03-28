@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""this is module for redis"""
+
+"""Implementing an expiring web cache"""
+
 import requests
 import redis
 from functools import wraps
@@ -8,7 +10,7 @@ cache_store = redis.Redis()
 
 
 def track_url_access(method):
-    """track url access method for redis"""
+    """count the times a url is aaceed and store html content in cache"""
 
     @wraps(method)
     def decorated_function(url):
@@ -32,6 +34,6 @@ def track_url_access(method):
 
 @track_url_access
 def get_page(url: str) -> str:
-    """get page method for redis"""
+    """get html content of a web page"""
     response = requests.get(url)
     return response.text
