@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""task0"""
 
 import redis
 import uuid
